@@ -11,7 +11,7 @@ def single_API_doc(single_req,md):
         sys.exit("Function single_API_doc is not receiving a single request.")
     # API Name:
     api_name = single_req.get("name","")
-    md.new_header(level = 3, title = f"{api_name}")
+    md.new_header(level = 2, title = f"{api_name}", add_table_of_contents = "y",)
     md.new_paragraph(f"**Name**: {api_name}")
     # Method:
     api_method = (single_req.get("method",""))
@@ -24,7 +24,7 @@ def single_API_doc(single_req,md):
     md.new_paragraph(f"**Endpoint**: {api_endpt}")
     md.new_paragraph("**Request Description**: ")
 
-    # [x]: Content-type
+    # [x]: Content-type>
     # API content-type
     api_bd_content_type = single_req.get("body",{}).get("contentType","")
     md.new_paragraph(f"**Content-Type**: {api_bd_content_type}")
@@ -32,13 +32,21 @@ def single_API_doc(single_req,md):
     # [x]:  Request body
     md.new_paragraph(r"**Request Body Parameters**:")
     req_body_params_eg_list = ["Field Name", "Required", "Data Type", "Example", "Remarks"]
-    req_body_params_arr = single_req.get("body",{}).get("body",[])
+    req_body_params_str = str(single_req.get("body",{}).get("body",[]))
+    req_body_params_arr = req_body_params_str.split("\n")
+
     if isinstance(req_body_params_arr,list) and len(req_body_params_arr) > 0:
         for param in req_body_params_arr:
-            req_body_params_eg_list.append(param.get("key",""))
+            req_body_params_eg_list.append(param.split(": ")[0])
             req_body_params_eg_list.append("")
             req_body_params_eg_list.append("")
-            req_body_params_eg_list.append(param.get("value",""))
+            try:
+                req_body_params_eg_list.append(param.split(": ")[1])
+            except IndexError:
+                """ 
+                    There is IndexError if no examples are given in the body's parameters. To avoid execution interruption, this except block exists.
+                """
+                req_body_params_eg_list.append("")
             req_body_params_eg_list.append("")
         md.new_table(columns= 5, rows = int(len(req_body_params_eg_list)/5), text = req_body_params_eg_list, text_align='left')
     else:
@@ -78,8 +86,8 @@ def create_markdown_API(node_req, md_fp, main_folder_name):
     if len(node_req.get("requests",[])) > 0:
         folder_name = node_req.get("name")
 
-        if not (folder_name == main_folder_name):
-            md_fp.new_header(level = 2, title = folder_name)
+        # if not (folder_name == main_folder_name):
+        #     md_fp.new_header(level = 2, title = folder_name)
         for req in node_req.get("requests",[]):
             single_API_doc(req,md_fp)
 
