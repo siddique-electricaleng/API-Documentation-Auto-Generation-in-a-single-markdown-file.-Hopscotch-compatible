@@ -26,30 +26,60 @@ def single_API_doc(single_req,md):
 
     # [x]: Content-type>
     # API content-type
-    api_bd_content_type = single_req.get("body",{}).get("contentType","")
-    md.new_paragraph(f"**Content-Type**: {api_bd_content_type}")
+    api_body_content_type = single_req.get("body",{}).get("contentType","")
+    md.new_paragraph(f"**Content-Type**: {api_body_content_type}")
 
     # [x]:  Request body
     md.new_paragraph(r"**Request Body Parameters**:")
-    req_body_params_eg_list = ["Field Name", "Required", "Data Type", "Example", "Remarks"]
-    req_body_params_str = str(single_req.get("body",{}).get("body",[]))
-    req_body_params_arr = req_body_params_str.split("\n")
+    req_body_tbl_list = ["Field Name", "Required", "Data Type", "Example", "Remarks"]    
+    
+    # Getting all the body parameter data in a single list below
+    if api_body_content_type == "multipart/form-data":
+        # Here req_body_list is a list of dicts.
+        req_body_list = single_req.get("body",{}).get("body",[])
+        if isinstance(req_body_list, list) and len(req_body_list)>0:
+            for body_dict in req_body_list:
+                # Field Name
+                req_body_tbl_list.append(body_dict.get("key",""))
+                # Required
+                req_body_tbl_list.append("yes")
+                # Data Type
+                req_body_tbl_list.append("int")
+                # Example
+                req_body_tbl_list.append(body_dict.get("value",""))
+                # Remarks
+                req_body_tbl_list.append("")
+            
+            md.new_table(columns= 5, rows = int(len(req_body_tbl_list)/5), text = req_body_tbl_list, text_align='left')
+        else:
+            md.new_paragraph("No Request Body Parameters", bold_italics_code='i', align = "center")
+    elif api_body_content_type in ("application/x-www-form-urlencoded","application/json"):
+        req_body_body = str(single_req.get("body",{}).get("body",""))
+        req_body_list = req_body_body.split("\n")
+        if isinstance(req_body_list,list) and len(req_body_list)>0:
+            for key_val_pair in req_body_list:
+                # Field Name
+                req_body_tbl_list.append(key_val_pair.split(": ")[0])
+                # Required
+                req_body_tbl_list.append("yes")
+                # Data Type
+                req_body_tbl_list.append("int")
+                # Example
+                try:
+                    req_body_tbl_list.append(key_val_pair.split(": ")[1])
+                except IndexError:
+                    """ 
+                        There is IndexError if no examples are given in the body's parameters. To avoid execution interruption, this except block exists.
+                    """
+                    req_body_tbl_list.append("")
+                # Remarks
+                req_body_tbl_list.append("")
 
-    if isinstance(req_body_params_arr,list) and len(req_body_params_arr) > 0:
-        for param in req_body_params_arr:
-            req_body_params_eg_list.append(param.split(": ")[0])
-            req_body_params_eg_list.append("")
-            req_body_params_eg_list.append("")
-            try:
-                req_body_params_eg_list.append(param.split(": ")[1])
-            except IndexError:
-                """ 
-                    There is IndexError if no examples are given in the body's parameters. To avoid execution interruption, this except block exists.
-                """
-                req_body_params_eg_list.append("")
-            req_body_params_eg_list.append("")
-        md.new_table(columns= 5, rows = int(len(req_body_params_eg_list)/5), text = req_body_params_eg_list, text_align='left')
-    else:
+            # Add the table from the data
+            md.new_table(columns= 5, rows = int(len(req_body_tbl_list)/5), text = req_body_tbl_list, text_align='left')
+        else:
+            md.new_paragraph("No Request Body Parameters", bold_italics_code='i', align = "center")
+    elif api_body_content_type == None:
         md.new_paragraph("No Request Body Parameters", bold_italics_code='i', align = "center")
 
     # [x]: headers
